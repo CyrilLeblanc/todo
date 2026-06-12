@@ -147,11 +147,11 @@ Aller dans **Settings → Secrets and variables → Actions** :
 
 | Secret | Description | Exemple |
 |--------|-------------|---------|
-| `DOCKER_USERNAME` | Ton user Docker Hub | `cyrilleblanc` |
-| `DOCKER_PASSWORD` | Token Docker Hub (pas le mot de passe) | `dckr_pat_xxx...` |
 | `VPS_HOST` | IP publique du VPS | `51.68.xxx.xxx` |
 | `VPS_USER` | Utilisateur SSH | `root` |
 | `VPS_SSH_KEY` | Clé privée SSH | contenu de `~/.ssh/id_ed25519` |
+
+Les images Docker sont publiées sur **GitHub Container Registry** (ghcr.io) — aucune configuration supplémentaire nécessaire, l'authentification se fait via `GITHUB_TOKEN`.
 
 ---
 
