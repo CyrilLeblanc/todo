@@ -1,0 +1,44 @@
+# ************************************************************
+# DOCKER COMPOSE — 3 containers
+# ************************************************************
+# - db      : PostgreSQL 16
+# - backend : Express + Prisma (port 3001 interne)
+# - frontend: Nginx qui sert React + proxy /api → backend (port 80 exposé)
+#
+# Usage : docker compose up --build
+# L'app est accessible sur http://localhost:8080
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: todoapp
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/todoapp
+      PORT: "3001"
+    depends_on:
+      db:
+        condition: service_healthy
+    # Pas de port exposé — le frontend nginx fait proxy
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:

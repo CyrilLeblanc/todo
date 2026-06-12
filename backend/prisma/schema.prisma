@@ -1,0 +1,21 @@
+// ************************************************************
+// SCHEMA PRISMA — Modèle de données
+// ************************************************************
+// Prisma = ORM qui génère le client TypeScript à partir de ce schéma.
+// La table "Todo" aura 4 colonnes : id, title, done, createdAt.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Todo {
+  id        Int      @id @default(autoincrement())
+  title     String
+  done      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
