@@ -3,8 +3,18 @@ name: CI/CD Todo App
 on:
   push:
     branches: [main]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "docker-compose*.yml"
+      - ".github/workflows/**"
   pull_request:
     branches: [main]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "docker-compose*.yml"
+      - ".github/workflows/**"
 
 env:
   REGISTRY: ghcr.io
