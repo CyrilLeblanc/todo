@@ -1,9 +1,3 @@
-// ************************************************************
-// FRONTEND — React + TypeScript (Vite)
-// ************************************************************
-// Composant principal : input pour ajouter + liste des todos.
-// fetch() appelle le backend sur /api/todos.
-
 import { useState, useEffect, useCallback } from "react";
 
 interface Todo {
@@ -19,7 +13,6 @@ export default function App() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [input, setInput] = useState("");
 
-  // Charger les todos au montage
   const fetchTodos = useCallback(() => {
     fetch(API)
       .then((r) => r.json())
@@ -30,7 +23,6 @@ export default function App() {
     fetchTodos();
   }, [fetchTodos]);
 
-  // Créer une todo
   const addTodo = async () => {
     if (!input.trim()) return;
     await fetch(API, {
@@ -42,21 +34,26 @@ export default function App() {
     fetchTodos();
   };
 
-  // Toggle done
   const toggleTodo = async (id: number) => {
     await fetch(`${API}/${id}`, { method: "PATCH" });
     fetchTodos();
   };
 
-  // Supprimer
   const deleteTodo = async (id: number) => {
     await fetch(`${API}/${id}`, { method: "DELETE" });
     fetchTodos();
   };
 
+  const total = todos.length;
+  const done = todos.filter((t) => t.done).length;
+
   return (
     <div style={{ maxWidth: 600, margin: "40px auto", fontFamily: "sans-serif" }}>
       <h1>📝 Todo List</h1>
+
+      <p style={{ color: "#666", fontSize: 14 }}>
+        {done}/{total} terminées
+      </p>
 
       <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
         <input
