@@ -20,4 +20,25 @@ export default [
       "@typescript-eslint/no-explicit-any": "warn",
     },
   },
+  {
+    files: ["src/__tests__/**/*.ts"],
+    languageOptions: {
+      parser: tsparser,
+      parserOptions: { ecmaVersion: 2022, sourceType: "module" },
+      globals: {
+        jest: "readonly",
+        describe: "readonly",
+        it: "readonly",
+        expect: "readonly",
+        beforeEach: "readonly",
+        afterEach: "readonly",
+        beforeAll: "readonly",
+        afterAll: "readonly",
+      },
+    },
+    plugins: { "@typescript-eslint": tseslint },
+    rules: {
+      "@typescript-eslint/no-unused-vars": "off",
+    },
+  },
 ];

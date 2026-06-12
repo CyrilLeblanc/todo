@@ -1,5 +1,4 @@
 import request from "supertest";
-import express from "express";
 import { createApp } from "../app";
 
 // ---- Mock de PrismaClient ----
