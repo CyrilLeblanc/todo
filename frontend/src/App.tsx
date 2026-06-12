@@ -44,6 +44,12 @@ export default function App() {
     fetchTodos();
   };
 
+  const clearCompleted = async () => {
+    await fetch(`${API}/done`, { method: "DELETE" });
+    fetchTodos();
+  };
+
+  const hasCompleted = todos.some((t) => t.done);
   const total = todos.length;
   const done = todos.filter((t) => t.done).length;
 
