@@ -8,7 +8,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/todo
 
 jobs:
   ci:
@@ -78,6 +77,9 @@ jobs:
     steps:
       - name: Checkout du code
         uses: actions/checkout@v4
+
+      - name: Lowercase image prefix
+        run: echo "IMAGE_PREFIX=ghcr.io/$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/todo" >> $GITHUB_ENV
 
       - name: Login GitHub Container Registry
         uses: docker/login-action@v3
