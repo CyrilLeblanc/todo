@@ -68,6 +68,20 @@ export default function App() {
         </button>
       </div>
 
+      {hasCompleted && (
+        <button
+          onClick={clearCompleted}
+          style={{
+            padding: "6px 16px",
+            fontSize: 14,
+            marginBottom: 16,
+            cursor: "pointer",
+          }}
+        >
+          Supprimer les terminées
+        </button>
+      )}
+
       <ul style={{ listStyle: "none", padding: 0 }}>
         {todos.map((todo) => (
           <li
