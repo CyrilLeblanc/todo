@@ -1,8 +1,9 @@
-# 📝 Todo App — Full-stack avec CI/CD
+# Todo App — Full-stack avec CI/CD
 
-Projet de to-do list complet pour cours de CI/CD.
+Projet de to-do list complet pour le cours de CI/CD.
+Application CRUD basée sur React + Express + PostgreSQL, déployée automatiquement via GitHub Actions sur un VPS Docker.
 
-## Architecture
+## Architecture applicative
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -18,21 +19,100 @@ Projet de to-do list complet pour cours de CI/CD.
 └─────────────────────────────────────────────────┘
 ```
 
-### Stack technique
-
 | Composant | Techno | Rôle |
 |-----------|--------|------|
 | Frontend | React + Vite + TypeScript | Interface utilisateur |
 | Backend | Express + Prisma + TypeScript | API REST |
 | Base de données | PostgreSQL 16 | Stockage persistant |
-| Serveur statique | Nginx | Sert React + proxy /api |
+| Serveur statique | Nginx | Sert React + proxy `/api` vers le backend |
 | CI/CD | GitHub Actions | Tests + build + deploy |
+
+---
+
+## Workflow Git
+
+```
+main ───────────────────────────────────── Merged (release)
+      \                                   /
+develop ──────────────── Merged (integration)
+  \                      /
+feature/xxx ── Developed, tested, pushed
+```
+
+| Branche | Rôle | Pipeline déclenché |
+|---------|------|-------------------|
+| `feature/*` | Développement d'une fonctionnalité | CI seulement (lint, tests, typecheck, build) via PR sur `develop` |
+| `develop` | Intégration continue | CI seulement (lint, tests, typecheck, build) |
+| `main` | Code en production | CI + CD (lint, tests, typecheck, build + images + deploy VPS) |
+
+**Flux de travail :**
+
+1. Créer une branche `feature/xxx` depuis `develop`
+2. Développer, committer, pousser — la CI vérifie le code à chaque push
+3. Ouvrir une PR `feature/xxx` → `develop` — la CI tourne sur la PR
+4. Merger sur `develop` après validation
+5. Ouvrir une PR `develop` → `main` — la CI tourne, le CD déploie sur le VPS au merge
+
+---
+
+## Architecture CI/CD
+
+```mermaid
+flowchart TD
+    A["Push / PR"] --> B["dorny/paths-filter\nDétecte les fichiers changés"]
+
+    B -->|"backend/** changé"| C["ci-backend"]
+    B -->|"frontend/** changé"| D["ci-frontend"]
+    B -->|"README.md uniquement"| E["Pipeline ignorée"]
+
+    C --> C1["npm ci"]
+    C1 --> C2["ESLint"]
+    C2 --> C3["TypeCheck"]
+    C3 --> C4["Tests Jest"]
+    C4 --> C5["Build"]
+
+    D --> D1["npm ci"]
+    D1 --> D2["ESLint"]
+    D2 --> D3["TypeCheck"]
+    D3 --> D4["Tests Vitest"]
+    D4 --> D5["Build"]
+
+    C5 --> F{"main + push ?"}
+    D5 --> F
+
+    F -- "Non" --> G["CI terminée"]
+    F -- "Oui" --> H["deploy"]
+
+    H --> H1["Build & push images\nghcr.io"]
+    H1 --> H2["SCP compose → VPS"]
+    H2 --> H3["SSH: pull + up"]
+    H3 --> I["App en ligne"]
+
+    style C fill:#1a73e8,color:#fff
+    style D fill:#1a73e8,color:#fff
+    style H fill:#34a853,color:#fff
+    style F fill:#fbbc04,color:#000
+    style E fill:#9e9e9e,color:#fff
+```
+
+### Étapes du pipeline (4 étapes requises)
+
+| Étape | Outil | Description |
+|-------|-------|-------------|
+| Build / Lint | ESLint + TypeScript | Vérifie le style du code et les types |
+| Tests automatisés | Jest (backend) / Vitest (frontend) | Tests unitaires mockés sans DB réelle |
+| Analyse de code | ESLint (strict mode) | Règles TypeScript strict, detection de unused vars |
+| Déploiement | Docker + SSH | Build images → ghcr.io → SCP + pull sur VPS |
 
 ---
 
 ## Démarrage rapide
 
 ```bash
+# Cloner le repo
+git clone git@github.com:CyrilLeblanc/todo.git
+cd todo
+
 # Lancer tout avec Docker Compose
 docker compose up --build
 
@@ -55,15 +135,22 @@ docker run -d --name todo-db \
 
 # Terminal 2 — Backend
 cd backend
-cp .env.example .env       # DATABASE_URL="postgresql://postgres:postgres@localhost:5432/todoapp"
+cp .env.example .env
 npm install
-npx prisma db push          # Crée les tables
+npx prisma db push
 npm run dev                  # http://localhost:3001
 
 # Terminal 3 — Frontend
 cd frontend
 npm install
 npm run dev                  # http://localhost:5173 (proxy /api → :3001)
+```
+
+### Lancer les tests
+
+```bash
+cd backend && npm test        # Jest
+cd frontend && npm test       # Vitest
 ```
 
 ---
@@ -79,79 +166,17 @@ npm run dev                  # http://localhost:5173 (proxy /api → :3001)
 
 ---
 
-## Pipeline CI/CD
-
-Le pipeline GitHub Actions s'exécute à chaque push/PR sur `main`.
-
-```mermaid
-flowchart TD
-    A["🔔 Push / PR sur main"] --> B
-
-    subgraph B["Job CI — Matrix parallèle"]
-        direction TB
-        C1["backend"] --> D1["npm ci"]
-        D1 --> E1["lint"]
-        E1 --> F1["typecheck"]
-        F1 --> G1["build"]
-
-        C2["frontend"] --> D2["npm ci"]
-        D2 --> E2["lint"]
-        E2 --> F2["typecheck"]
-        F2 --> G2["build"]
-    end
-
-    B --> H{"Branche = main ?\net push (pas PR) ?"}
-    H -- "Non → stop" --> I["✅ CI passée"]
-    H -- "Oui" --> J
-
-    subgraph J["Job CD — Deploy"]
-        direction TB
-        K["🐳 Login Docker Hub"]
-        K --> L["Build & push backend"]
-        L --> M["Build & push frontend"]
-        M --> N["🚀 SSH → VPS"]
-        N --> O["docker compose pull + up -d"]
-    end
-
-    J --> P["✅ App en ligne !"]
-
-    style B fill:#1a73e8,color:#fff
-    style J fill:#34a853,color:#fff
-    style H fill:#fbbc04,color:#000
-```
-
-### Détail des étapes CI
-
-```mermaid
-flowchart LR
-    A["📥 Checkout\n(récupère le code)"] --> B["📦 npm ci\n(installe les deps)"]
-    B --> C["🔍 Lint\n(ESLint: style code)"]
-    C --> D["🧩 TypeCheck\n(tsc: erreurs de types)"]
-    D --> E["🏗️ Build\n(compilation finale)"]
-```
-
-### Détail du deploy
-
-```mermaid
-flowchart LR
-    A["🐳 Build images\nDocker"] --> B["📤 Push\nvers Docker Hub"]
-    B --> C["🌐 SSH\nvers le VPS"]
-    C --> D["⬇️ Pull images\n+ restart"]
-```
-
----
-
-## Configuration GitHub Actions (secrets à ajouter)
+## Configuration GitHub Actions
 
 Aller dans **Settings → Secrets and variables → Actions** :
 
-| Secret | Description | Exemple |
-|--------|-------------|---------|
-| `VPS_HOST` | IP publique du VPS | `51.68.xxx.xxx` |
-| `VPS_USER` | Utilisateur SSH | `root` |
-| `VPS_SSH_KEY` | Clé privée SSH | contenu de `~/.ssh/id_ed25519` |
+| Secret | Description |
+|--------|-------------|
+| `VPS_HOST` | IP publique du VPS |
+| `VPS_USER` | Utilisateur SSH sur le VPS |
+| `VPS_SSH_KEY` | Clé privée SSH (`~/.ssh/id_ed25519`) |
 
-Les images Docker sont publiées sur **GitHub Container Registry** (ghcr.io) — aucune configuration supplémentaire nécessaire, l'authentification se fait via `GITHUB_TOKEN`.
+Les images Docker sont publiées sur **GitHub Container Registry** (ghcr.io). L'authentification se fait via `GITHUB_TOKEN` (automatique, pas de secret nécessaire). Les packages doivent être rendus publics après le premier push.
 
 ---
 
@@ -160,25 +185,23 @@ Les images Docker sont publiées sur **GitHub Container Registry** (ghcr.io) —
 ```
 todo-app/
 ├── backend/
-│   ├── src/index.ts          # Serveur Express + routes CRUD
-│   ├── prisma/schema.prisma  # Modèle de données (Todo)
-│   ├── Dockerfile            # Build multi-stage Node.js
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── eslint.config.js
+│   ├── src/
+│   │   ├── index.ts              # Point d'entrée (lance le serveur)
+│   │   ├── server.ts             # Express app exportée (pour tests)
+│   │   └── __tests__/todos.test.ts  # Tests Jest + supertest
+│   ├── prisma/schema.prisma      # Modèle Todo
+│   ├── Dockerfile                # Multi-stage Node.js
+│   └── package.json
 ├── frontend/
 │   ├── src/
-│   │   ├── App.tsx           # Composant principal React
-│   │   ├── main.tsx          # Point d'entrée
-│   │   └── index.css         # Styles
-│   ├── nginx.conf            # Proxy /api → backend
-│   ├── Dockerfile            # Build multi-stage (Node → Nginx)
-│   ├── vite.config.ts        # Config Vite + proxy dev
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── eslint.config.js
-├── docker-compose.yml        # 3 services: db + backend + frontend
-├── .github/workflows/
-│   └── ci-cd.yml             # Pipeline GitHub Actions
-└── README.md                 # Ce fichier
+│   │   ├── App.tsx               # Composant principal React
+│   │   ├── main.tsx              # Point d'entrée
+│   │   └── __tests__/App.test.tsx  # Tests Vitest + RTL
+│   ├── nginx.conf                # Proxy /api → backend
+│   ├── Dockerfile                # Multi-stage (Node → Nginx)
+│   └── package.json
+├── docker-compose.yml            # Dev local (build from source)
+├── docker-compose.prod.yml       # VPS (pull images from ghcr.io)
+├── .github/workflows/ci-cd.yml    # Pipeline GitHub Actions
+└── README.md
 ```
