@@ -8,6 +8,7 @@ const mockTodoCreate = jest.fn();
 const mockTodoFindUnique = jest.fn();
 const mockTodoUpdate = jest.fn();
 const mockTodoDelete = jest.fn();
+const mockTodoDeleteMany = jest.fn();
 
 jest.mock("@prisma/client", () => ({
   PrismaClient: jest.fn().mockImplementation(() => ({
@@ -17,6 +18,7 @@ jest.mock("@prisma/client", () => ({
       findUnique: mockTodoFindUnique,
       update: mockTodoUpdate,
       delete: mockTodoDelete,
+      deleteMany: mockTodoDeleteMany,
     },
   })),
 }));
@@ -182,5 +184,18 @@ describe("DELETE /api/todos/:id", () => {
 
     expect(res.status).toBe(204);
     expect(res.body).toEqual({});
+  });
+});
+
+describe("DELETE /api/todos/done", () => {
+  it("supprime toutes les todos terminées et retourne 204", async () => {
+    mockTodoDeleteMany.mockResolvedValue({ count: 3 });
+
+    const { app } = buildApp();
+
+    const res = await request(app).delete("/api/todos/done");
+
+    expect(res.status).toBe(204);
+    expect(mockTodoDeleteMany).toHaveBeenCalledWith({ where: { done: true } });
   });
 });
