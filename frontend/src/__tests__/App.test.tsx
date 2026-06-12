@@ -43,6 +43,7 @@ describe("App", () => {
     // Attendre que le fetch initial soit résolu et que React re-rende
     // Le titre inclut un emoji : "📝 Todo List"
     expect(await screen.findByText(/Todo List/)).toBeInTheDocument();
+    expect(screen.getByText("0/0 terminées")).toBeInTheDocument();
     expect(screen.getByText("Aucune tâche — ajoute-en une !")).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith("/api/todos");
   });
