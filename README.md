@@ -48,10 +48,19 @@ feature/xxx ── Developed, tested, pushed
 **Flux de travail :**
 
 1. Créer une branche `feature/xxx` depuis `develop`
-2. Développer, committer, pousser — la CI vérifie le code à chaque push
-3. Ouvrir une PR `feature/xxx` → `develop` — la CI tourne sur la PR
-4. Merger sur `develop` après validation
-5. Ouvrir une PR `develop` → `main` — la CI tourne, le CD déploie sur le VPS au merge
+2. Développer, committer, pousser — ouvrir une PR `feature/xxx` → `develop`
+3. La CI tourne sur la PR : lint, tests, typecheck, build
+4. Après validation, merger la PR sur `develop`
+5. Répéter pour chaque feature
+6. Quand `develop` est stable, ouvrir une PR `develop` → `main`
+7. La CI tourne sur la PR, le CD déploie sur le VPS au merge
+
+**Exemple de branches dans ce projet :**
+
+| Branche | Feature | Composants modifiés |
+|---------|---------|-------------------|
+| `feature/todo-count` | Compteur de tâches terminées | Frontend uniquement |
+| `feature/clear-completed` | Bouton supprimer les terminées | Backend + Frontend |
 
 ---
 
